@@ -21,7 +21,7 @@ const CompanyCard = (props: IProps) => {
     const [pageSize, setPageSize] = useState(4);
     const [total, setTotal] = useState(0);
     const [filter, setFilter] = useState("");
-    const [sortQuery, setSortQuery] = useState("sort=lastModifiedDate,desc");
+    const [sortQuery, setSortQuery] = useState("sort=updatedAt,desc");
     const navigate = useNavigate();
 
     useEffect(() => {

@@ -46,8 +46,8 @@ export interface ICompany {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ISkill {
@@ -56,8 +56,8 @@ export interface ISkill {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 
@@ -82,8 +82,8 @@ export interface IUser {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface IJob {
@@ -107,8 +107,8 @@ export interface IJob {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface IResume {
@@ -128,14 +128,14 @@ export interface IResume {
     };
     history?: {
         status: string;
-        lastModifiedDate: Date;
+        updatedAt: Date;
         lastModifiedBy: { id: string; email: string }
     }[]
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface IPermission {
@@ -148,8 +148,8 @@ export interface IPermission {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 
 }
 
@@ -163,8 +163,8 @@ export interface IRole {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ISubscribers {
@@ -175,6 +175,6 @@ export interface ISubscribers {
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
-    createdDate?: string;
-    lastModifiedDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }

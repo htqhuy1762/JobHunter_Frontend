@@ -37,7 +37,7 @@ const SearchClient = () => {
     }, [])
 
     const fetchSkill = async () => {
-        let query = `page=1&size=100&sort=createdDate,desc`;
+        let query = `page=1&size=100&sort=createdAt,desc`;
 
         const res = await callFetchAllSkill(query);
         if (res && res.data) {

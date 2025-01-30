@@ -93,25 +93,25 @@ const ResumePage = () => {
         },
 
         {
-            title: 'createdDate',
-            dataIndex: 'createdDate',
+            title: 'createdAt',
+            dataIndex: 'createdAt',
             width: 200,
             sorter: true,
             render: (text, record, index, action) => {
                 return (
-                    <>{record.createdDate ? dayjs(record.createdDate).format('DD-MM-YYYY HH:mm:ss') : ""}</>
+                    <>{record.createdAt ? dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss') : ""}</>
                 )
             },
             hideInSearch: true,
         },
         {
-            title: 'lastModifiedDate',
-            dataIndex: 'lastModifiedDate',
+            title: 'updatedAt',
+            dataIndex: 'updatedAt',
             width: 200,
             sorter: true,
             render: (text, record, index, action) => {
                 return (
-                    <>{record.lastModifiedDate ? dayjs(record.lastModifiedDate).format('DD-MM-YYYY HH:mm:ss') : ""}</>
+                    <>{record.updatedAt ? dayjs(record.updatedAt).format('DD-MM-YYYY HH:mm:ss') : ""}</>
                 )
             },
             hideInSearch: true,
@@ -179,16 +179,16 @@ const ResumePage = () => {
             sortBy = sort.status === 'ascend' ? "sort=status,asc" : "sort=status,desc";
         }
 
-        if (sort && sort.createdDate) {
-            sortBy = sort.createdDate === 'ascend' ? "sort=createdDate,asc" : "sort=createdDate,desc";
+        if (sort && sort.createdAt) {
+            sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
         }
-        if (sort && sort.lastModifiedDate) {
-            sortBy = sort.lastModifiedDate === 'ascend' ? "sort=lastModifiedDate,asc" : "sort=lastModifiedDate,desc";
+        if (sort && sort.updatedAt) {
+            sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
         }
 
-        //mặc định sort theo lastModifiedDate
+        //mặc định sort theo updatedAt
         if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=lastModifiedDate,desc`;
+            temp = `${temp}&sort=updatedAt,desc`;
         } else {
             temp = `${temp}&${sortBy}`;
         }

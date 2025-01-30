@@ -60,10 +60,10 @@ const UserResume = (props: any) => {
         },
         {
             title: 'Ngày rải CV',
-            dataIndex: "createdDate",
+            dataIndex: "createdAt",
             render(value, record, index) {
                 return (
-                    <>{dayjs(record.createdDate).format('DD-MM-YYYY HH:mm:ss')}</>
+                    <>{dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss')}</>
                 )
             },
         },
@@ -131,7 +131,7 @@ const JobByEmail = (props: any) => {
     }, [])
 
     const fetchSkill = async () => {
-        let query = `page=1&size=100&sort=createdDate,desc`;
+        let query = `page=1&size=100&sort=createdAt,desc`;
 
         const res = await callFetchAllSkill(query);
         if (res && res.data) {

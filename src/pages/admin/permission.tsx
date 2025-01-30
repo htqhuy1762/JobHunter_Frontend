@@ -89,25 +89,25 @@ const PermissionPage = () => {
             sorter: true,
         },
         {
-            title: 'createdDate',
-            dataIndex: 'createdDate',
+            title: 'createdAt',
+            dataIndex: 'createdAt',
             width: 200,
             sorter: true,
             render: (text, record, index, action) => {
                 return (
-                    <>{record.createdDate ? dayjs(record.createdDate).format('DD-MM-YYYY HH:mm:ss') : ""}</>
+                    <>{record.createdAt ? dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss') : ""}</>
                 )
             },
             hideInSearch: true,
         },
         {
-            title: 'lastModifiedDate',
-            dataIndex: 'lastModifiedDate',
+            title: 'updatedAt',
+            dataIndex: 'updatedAt',
             width: 200,
             sorter: true,
             render: (text, record, index, action) => {
                 return (
-                    <>{record.lastModifiedDate ? dayjs(record.lastModifiedDate).format('DD-MM-YYYY HH:mm:ss') : ""}</>
+                    <>{record.updatedAt ? dayjs(record.updatedAt).format('DD-MM-YYYY HH:mm:ss') : ""}</>
                 )
             },
             hideInSearch: true,
@@ -188,7 +188,7 @@ const PermissionPage = () => {
         let temp = queryString.stringify(clone);
 
         let sortBy = "";
-        const fields = ["name", "apiPath", "method", "module", "createdDate", "lastModifiedDate"];
+        const fields = ["name", "apiPath", "method", "module", "createdAt", "updatedAt"];
 
         if (sort) {
             for (const field of fields) {
@@ -199,9 +199,9 @@ const PermissionPage = () => {
             }
         }
 
-        //mặc định sort theo lastModifiedDate
+        //mặc định sort theo updatedAt
         if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=lastModifiedDate,desc`;
+            temp = `${temp}&sort=updatedAt,desc`;
         } else {
             temp = `${temp}&${sortBy}`;
         }

@@ -92,8 +92,8 @@ const ViewDetailResume = (props: IProps) => {
                     <Descriptions.Item label="Tên Công Ty">
                         {dataInit?.companyName}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Ngày tạo">{dataInit && dataInit.createdDate ? dayjs(dataInit.createdDate).format('DD-MM-YYYY HH:mm:ss') : ""}</Descriptions.Item>
-                    <Descriptions.Item label="Ngày sửa">{dataInit && dataInit.lastModifiedDate ? dayjs(dataInit.lastModifiedDate).format('DD-MM-YYYY HH:mm:ss') : ""}</Descriptions.Item>
+                    <Descriptions.Item label="Ngày tạo">{dataInit && dataInit.createdAt ? dayjs(dataInit.createdAt).format('DD-MM-YYYY HH:mm:ss') : ""}</Descriptions.Item>
+                    <Descriptions.Item label="Ngày sửa">{dataInit && dataInit.updatedAt ? dayjs(dataInit.updatedAt).format('DD-MM-YYYY HH:mm:ss') : ""}</Descriptions.Item>
 
                 </Descriptions>
             </Drawer>
