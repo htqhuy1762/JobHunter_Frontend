@@ -4,7 +4,13 @@ import { callFetchAccount } from '@/config/api';
 // First, create the thunk
 export const fetchAccount = createAsyncThunk(
     'account/fetchAccount',
-    async () => {
+    async (_, { rejectWithValue }) => {
+        // Kiểm tra token trước khi gọi API để tránh spam request khi chưa login
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            return rejectWithValue('No token found');
+        }
+
         const response = await callFetchAccount();
         return response.data;
     }
@@ -97,10 +103,8 @@ export const accountSlide = createSlice({
     extraReducers: (builder) => {
         // Add reducers for additional action types here, and handle loading state as needed
         builder.addCase(fetchAccount.pending, (state, action) => {
-            if (action.payload) {
-                state.isAuthenticated = false;
-                state.isLoading = true;
-            }
+            // Pending không có payload, chỉ set loading state
+            state.isLoading = true;
         })
 
         builder.addCase(fetchAccount.fulfilled, (state, action) => {
@@ -117,10 +121,10 @@ export const accountSlide = createSlice({
         })
 
         builder.addCase(fetchAccount.rejected, (state, action) => {
-            if (action.payload) {
-                state.isAuthenticated = false;
-                state.isLoading = false;
-            }
+            // Rejected luôn set isLoading = false, isAuthenticated = false
+            // (không cần kiểm tra action.payload vì rejected có thể không có payload)
+            state.isAuthenticated = false;
+            state.isLoading = false;
         })
 
     },

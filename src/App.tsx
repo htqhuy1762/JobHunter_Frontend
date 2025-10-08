@@ -65,7 +65,12 @@ export default function App() {
       || window.location.pathname === '/register'
     )
       return;
-    dispatch(fetchAccount())
+
+    // Chỉ gọi fetchAccount nếu có token trong localStorage
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      dispatch(fetchAccount())
+    }
   }, [])
 
   const router = createBrowserRouter([
