@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CodeOutlined, ContactsOutlined, FireOutlined, LogoutOutlined, MenuFoldOutlined, RiseOutlined, TwitterOutlined } from '@ant-design/icons';
+import { CodeOutlined, ContactsOutlined, FireOutlined, LockOutlined, LogoutOutlined, MenuFoldOutlined, RiseOutlined, TwitterOutlined } from '@ant-design/icons';
 import { Avatar, Drawer, Dropdown, MenuProps, Space, message } from 'antd';
 import { Menu, ConfigProvider } from 'antd';
 import styles from '@/styles/client.module.scss';
@@ -70,6 +70,11 @@ const Header = (props: any) => {
             >Quản lý tài khoản</label>,
             key: 'manage-account',
             icon: <ContactsOutlined />
+        },
+        {
+            label: <Link to={"/change-password"}>Đổi mật khẩu</Link>,
+            key: 'change-password',
+            icon: <LockOutlined />
         },
         ...(user.role?.permissions?.length ? [{
             label: <Link
