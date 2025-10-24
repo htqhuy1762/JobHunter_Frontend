@@ -5,7 +5,7 @@ import { ISkill } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteSkill } from "@/config/api";
 import queryString from 'query-string';
@@ -23,6 +23,11 @@ const SkillPage = () => {
     const meta = useAppSelector(state => state.skill.meta);
     const skills = useAppSelector(state => state.skill.result);
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchSkill({ query }));
+    }, []);
 
     const handleDeleteSkill = async (id: string | undefined) => {
         if (id) {
@@ -187,10 +192,7 @@ const SkillPage = () => {
                 loading={isFetching}
                 columns={columns}
                 dataSource={skills}
-                request={async (params, sort, filter): Promise<any> => {
-                    const query = buildQuery(params, sort, filter);
-                    dispatch(fetchSkill({ query }))
-                }}
+                manualRequest={true}
                 scroll={{ x: true }}
                 pagination={
                     {
@@ -198,6 +200,10 @@ const SkillPage = () => {
                         pageSize: meta.pageSize,
                         showSizeChanger: true,
                         total: meta.total,
+                        onChange: (page, pageSize) => {
+                            const query = buildQuery({ current: page, pageSize }, {}, {});
+                            dispatch(fetchSkill({ query }));
+                        },
                         showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                     }
                 }

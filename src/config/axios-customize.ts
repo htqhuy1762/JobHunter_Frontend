@@ -46,10 +46,14 @@ instance.interceptors.request.use(function (config) {
 instance.interceptors.response.use(
     (res) => res.data,
     async (error) => {
+        // Kiểm tra có access_token trước khi retry với refresh token
+        const access_token_local = localStorage.getItem('access_token');
+
         if (error.config && error.response
             && +error.response.status === 401
             && error.config.url !== '/api/v1/auth/login'
             && !error.config.headers[NO_RETRY_HEADER]
+            && access_token_local // CHỈ retry nếu có token (tránh gọi refresh khi chưa login)
         ) {
             const access_token = await handleRefreshToken();
             error.config.headers[NO_RETRY_HEADER] = 'true'

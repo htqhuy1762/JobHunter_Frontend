@@ -43,6 +43,10 @@ const RolePage = () => {
             }
         }
         init();
+
+        // Fetch roles data
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchRole({ query }));
     }, [])
 
 
@@ -218,10 +222,7 @@ const RolePage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={roles}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchRole({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -229,6 +230,10 @@ const RolePage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchRole({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

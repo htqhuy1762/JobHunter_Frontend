@@ -70,7 +70,7 @@ export default function App() {
     // Chỉ gọi fetchAccount nếu có token trong localStorage
     const token = localStorage.getItem('access_token');
     if (token) {
-      dispatch(fetchAccount())
+      dispatch(fetchAccount());
     }
   }, [])
 
@@ -165,7 +165,7 @@ export default function App() {
 
     {
       path: "/change-password",
-      element: 
+      element:
         <ProtectedRoute>
           <ChangePasswordPage />
         </ProtectedRoute>,

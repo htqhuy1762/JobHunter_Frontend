@@ -2,12 +2,15 @@ import { Navigate } from "react-router-dom";
 import { useAppSelector } from "@/redux/hooks";
 import NotPermitted from "./not-permitted";
 import Loading from "../loading";
+import { hasAdminAccess } from "@/config/utils";
 
 const RoleBaseRoute = (props: any) => {
     const user = useAppSelector(state => state.account.user);
-    const userRole = user.role.name;
+    const userRole = user.role?.name;
 
-    if (userRole !== 'NORMAL_USER') {
+    // Cho phép ROLE_ADMIN và ROLE_HR truy cập trang admin
+    // ROLE_USER không có quyền (redirect về not-permitted)
+    if (hasAdminAccess(userRole)) {
         return (<>{props.children}</>)
     } else {
         return (<NotPermitted />)

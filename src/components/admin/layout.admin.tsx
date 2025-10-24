@@ -38,34 +38,37 @@ const LayoutAdmin = () => {
 
     useEffect(() => {
         const ACL_ENABLE = import.meta.env.VITE_ACL_ENABLE;
-        if (permissions?.length || ACL_ENABLE === 'false') {
+        const isAdmin = user.role?.name === 'ROLE_ADMIN';
 
-            const viewCompany = permissions?.find(item =>
+        // ROLE_ADMIN luôn có full menu, không cần check permissions
+        if (isAdmin || permissions?.length || ACL_ENABLE === 'false') {
+
+            const viewCompany = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.COMPANIES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.COMPANIES.GET_PAGINATE.method
             )
 
-            const viewUser = permissions?.find(item =>
+            const viewUser = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.USERS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.USERS.GET_PAGINATE.method
             )
 
-            const viewJob = permissions?.find(item =>
+            const viewJob = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.JOBS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.JOBS.GET_PAGINATE.method
             )
 
-            const viewResume = permissions?.find(item =>
+            const viewResume = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.RESUMES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.RESUMES.GET_PAGINATE.method
             )
 
-            const viewRole = permissions?.find(item =>
+            const viewRole = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.ROLES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.ROLES.GET_PAGINATE.method
             )
 
-            const viewPermission = permissions?.find(item =>
+            const viewPermission = isAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.PERMISSIONS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.USERS.GET_PAGINATE.method
             )
@@ -108,14 +111,11 @@ const LayoutAdmin = () => {
                     key: '/admin/role',
                     icon: <ExceptionOutlined />
                 }] : []),
-
-
-
             ];
 
             setMenuItems(full);
         }
-    }, [permissions])
+    }, [permissions, user.role?.name])
     useEffect(() => {
         setActiveMenu(location.pathname)
     }, [location])

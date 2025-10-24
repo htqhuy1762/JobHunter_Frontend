@@ -6,7 +6,7 @@ import { ICompany } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteCompany } from "@/config/api";
 import queryString from 'query-string';
@@ -24,6 +24,11 @@ const CompanyPage = () => {
     const meta = useAppSelector(state => state.company.meta);
     const companies = useAppSelector(state => state.company.result);
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchCompany({ query }));
+    }, []);
 
     const handleDeleteCompany = async (id: string | undefined) => {
         if (id) {
@@ -201,10 +206,7 @@ const CompanyPage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={companies}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchCompany({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -212,6 +214,10 @@ const CompanyPage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchCompany({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

@@ -42,7 +42,7 @@ interface IState {
 
 const initialState: IState = {
     isAuthenticated: false,
-    isLoading: true,
+    isLoading: !!localStorage.getItem('access_token'), // true nếu có token (để tránh bị redirect khi F5)
     isRefreshToken: false,
     errorRefreshToken: "",
     user: {

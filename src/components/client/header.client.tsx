@@ -76,7 +76,8 @@ const Header = (props: any) => {
             key: 'change-password',
             icon: <LockOutlined />
         },
-        ...(user.role?.permissions?.length ? [{
+        // Chỉ ROLE_ADMIN mới có quyền vào trang admin
+        ...((user.role?.name === 'ROLE_ADMIN') ? [{
             label: <Link
                 to={"/admin"}
             >Trang Quản Trị</Link>,

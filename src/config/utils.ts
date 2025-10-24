@@ -94,3 +94,29 @@ export const groupByPermission = (data: any[]): { module: string; permissions: I
         return { module: key, permissions: value as IPermission[] };
     });
 };
+
+/**
+ * Role utilities - chuẩn hóa role names theo backend
+ * Backend roles: ROLE_ADMIN, ROLE_HR, ROLE_USER
+ */
+export const ROLES = {
+    ADMIN: 'ROLE_ADMIN',
+    HR: 'ROLE_HR',
+    USER: 'ROLE_USER',
+} as const;
+
+export const isAdmin = (roleName?: string): boolean => {
+    return roleName === ROLES.ADMIN;
+};
+
+export const isHR = (roleName?: string): boolean => {
+    return roleName === ROLES.HR;
+};
+
+export const isUser = (roleName?: string): boolean => {
+    return roleName === ROLES.USER;
+};
+
+export const hasAdminAccess = (roleName?: string): boolean => {
+    return roleName === ROLES.ADMIN;
+};

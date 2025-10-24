@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IResume } from "@/types/backend";
 import { ActionType, ProColumns, ProFormSelect } from '@ant-design/pro-components';
 import { Space, message, notification } from "antd";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteResume } from "@/config/api";
 import queryString from 'query-string';
@@ -21,6 +21,11 @@ const ResumePage = () => {
     const meta = useAppSelector(state => state.resume.meta);
     const resumes = useAppSelector(state => state.resume.result);
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchResume({ query }));
+    }, []);
 
     const [dataInit, setDataInit] = useState<IResume | null>(null);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
@@ -209,10 +214,7 @@ const ResumePage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={resumes}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchResume({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -220,6 +222,10 @@ const ResumePage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchResume({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

@@ -4,7 +4,7 @@ import { IJob } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns, ProFormSelect } from '@ant-design/pro-components';
 import { Button, Popconfirm, Space, Tag, message, notification } from "antd";
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteJob } from "@/config/api";
 import queryString from 'query-string';
@@ -22,6 +22,11 @@ const JobPage = () => {
     const jobs = useAppSelector(state => state.job.result);
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchJob({ query }));
+    }, []);
 
     const handleDeleteJob = async (id: string | undefined) => {
         if (id) {
@@ -239,10 +244,7 @@ const JobPage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={jobs}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchJob({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -250,6 +252,10 @@ const JobPage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchJob({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

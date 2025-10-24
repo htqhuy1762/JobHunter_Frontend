@@ -4,7 +4,7 @@ import { IPermission } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeletePermission } from "@/config/api";
 import queryString from 'query-string';
@@ -26,6 +26,11 @@ const PermissionPage = () => {
     const meta = useAppSelector(state => state.permission.meta);
     const permissions = useAppSelector(state => state.permission.result);
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchPermission({ query }));
+    }, []);
 
     const handleDeletePermission = async (id: string | undefined) => {
         if (id) {
@@ -221,10 +226,7 @@ const PermissionPage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={permissions}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchPermission({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -232,6 +234,10 @@ const PermissionPage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchPermission({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

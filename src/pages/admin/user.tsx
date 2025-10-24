@@ -5,7 +5,7 @@ import { IUser } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteUser } from "@/config/api";
 import queryString from 'query-string';
@@ -26,6 +26,11 @@ const UserPage = () => {
     const meta = useAppSelector(state => state.user.meta);
     const users = useAppSelector(state => state.user.result);
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
+        dispatch(fetchUser({ query }));
+    }, []);
 
     const handleDeleteUser = async (id: string | undefined) => {
         if (id) {
@@ -215,10 +220,7 @@ const UserPage = () => {
                     loading={isFetching}
                     columns={columns}
                     dataSource={users}
-                    request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
-                        dispatch(fetchUser({ query }))
-                    }}
+                    manualRequest={true}
                     scroll={{ x: true }}
                     pagination={
                         {
@@ -226,6 +228,10 @@ const UserPage = () => {
                             pageSize: meta.pageSize,
                             showSizeChanger: true,
                             total: meta.total,
+                            onChange: (page, pageSize) => {
+                                const query = buildQuery({ current: page, pageSize }, {}, {});
+                                dispatch(fetchUser({ query }));
+                            },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
                     }

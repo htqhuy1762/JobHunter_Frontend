@@ -118,13 +118,15 @@ const JobByEmail = (props: any) => {
             if (res && res.data) {
                 setSubscriber(res.data);
                 const d = res.data.skills;
-                const arr = d.map((item: any) => {
-                    return {
-                        label: item.name as string,
-                        value: item.id + "" as string
-                    }
-                });
-                form.setFieldValue("skills", arr);
+                if (d && d.length > 0) {
+                    const arr = d.map((item: any) => {
+                        return {
+                            label: item.name as string,
+                            value: item.id + "" as string
+                        }
+                    });
+                    form.setFieldValue("skills", arr);
+                }
             }
         }
         init();
@@ -253,11 +255,6 @@ const ManageAccount = (props: IProps) => {
             key: 'user-update-info',
             label: `Cập nhật thông tin`,
             children: <UserUpdateInfo />,
-        },
-        {
-            key: 'user-password',
-            label: `Thay đổi mật khẩu`,
-            children: `//todo`,
         },
     ];
 
