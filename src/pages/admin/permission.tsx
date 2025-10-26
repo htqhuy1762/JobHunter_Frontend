@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeletePermission } from "@/config/api";
 import queryString from 'query-string';
-import { fetchPermission } from "@/redux/slice/permissionSlide";
+import { fetchPermission, resetPermissionPage, setPermissionPage } from "@/redux/slice/permissionSlide";
 import ViewDetailPermission from "@/components/admin/permission/view.permission";
 import ModalPermission from "@/components/admin/permission/modal.permission";
 import { colorMethod } from "@/config/utils";
@@ -28,6 +28,7 @@ const PermissionPage = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        dispatch(resetPermissionPage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchPermission({ query }));
     }, []);
@@ -235,6 +236,7 @@ const PermissionPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                dispatch(setPermissionPage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchPermission({ query }));
                             },

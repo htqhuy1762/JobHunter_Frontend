@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteRole, callFetchPermission } from "@/config/api";
 import queryString from 'query-string';
-import { fetchRole } from "@/redux/slice/roleSlide";
+import { fetchRole, resetRolePage, setRolePage } from "@/redux/slice/roleSlide";
 import ModalRole from "@/components/admin/role/modal.role";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
@@ -45,6 +45,7 @@ const RolePage = () => {
         init();
 
         // Fetch roles data
+        dispatch(resetRolePage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchRole({ query }));
     }, [])
@@ -231,6 +232,7 @@ const RolePage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                dispatch(setRolePage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchRole({ query }));
                             },

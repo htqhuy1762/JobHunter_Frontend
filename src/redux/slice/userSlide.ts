@@ -43,7 +43,13 @@ export const userSlide = createSlice({
         setActiveMenu: (state, action) => {
             // state.activeMenu = action.payload;
         },
-
+        resetUserPage: (state) => {
+            state.meta.page = 1;
+        },
+        setUserPage: (state, action) => {
+            state.meta.page = action.payload.page;
+            state.meta.pageSize = action.payload.pageSize;
+        },
 
     },
     extraReducers: (builder) => {
@@ -63,12 +69,10 @@ export const userSlide = createSlice({
         builder.addCase(fetchUser.fulfilled, (state, action) => {
             if (action.payload && action.payload.data) {
                 state.isFetching = false;
-                state.meta = action.payload.data.meta;
+                state.meta.pages = action.payload.data.meta.pages;
+                state.meta.total = action.payload.data.meta.total;
                 state.result = action.payload.data.result;
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
     },
 
@@ -76,6 +80,8 @@ export const userSlide = createSlice({
 
 export const {
     setActiveMenu,
+    resetUserPage,
+    setUserPage,
 } = userSlide.actions;
 
 export default userSlide.reducer;

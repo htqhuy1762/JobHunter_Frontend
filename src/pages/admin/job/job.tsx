@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { callDeleteJob } from "@/config/api";
 import queryString from 'query-string';
 import { useNavigate } from "react-router-dom";
-import { fetchJob } from "@/redux/slice/jobSlide";
+import { fetchJob, resetJobPage, setJobPage } from "@/redux/slice/jobSlide";
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import { sfIn } from "spring-filter-query-builder";
@@ -24,6 +24,7 @@ const JobPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        dispatch(resetJobPage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchJob({ query }));
     }, []);
@@ -253,6 +254,7 @@ const JobPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                dispatch(setJobPage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchJob({ query }));
                             },

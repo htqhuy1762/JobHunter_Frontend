@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { callDeleteSkill } from "@/config/api";
 import queryString from 'query-string';
 import { sfLike } from "spring-filter-query-builder";
-import { fetchSkill } from "@/redux/slice/skillSlide";
+import { fetchSkill, resetSkillPage, setSkillPage } from "@/redux/slice/skillSlide";
 import ModalSkill from "@/components/admin/skill/modal.skill";
 
 const SkillPage = () => {
@@ -25,6 +25,7 @@ const SkillPage = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        dispatch(resetSkillPage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchSkill({ query }));
     }, []);
@@ -201,6 +202,7 @@ const SkillPage = () => {
                         showSizeChanger: true,
                         total: meta.total,
                         onChange: (page, pageSize) => {
+                            dispatch(setSkillPage({ page, pageSize }));
                             const query = buildQuery({ current: page, pageSize }, {}, {});
                             dispatch(fetchSkill({ query }));
                         },

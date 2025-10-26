@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteResume } from "@/config/api";
 import queryString from 'query-string';
-import { fetchResume } from "@/redux/slice/resumeSlide";
+import { fetchResume, resetResumePage, setResumePage } from "@/redux/slice/resumeSlide";
 import ViewDetailResume from "@/components/admin/resume/view.resume";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
@@ -23,6 +23,7 @@ const ResumePage = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        dispatch(resetResumePage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchResume({ query }));
     }, []);
@@ -223,6 +224,7 @@ const ResumePage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                dispatch(setResumePage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchResume({ query }));
                             },

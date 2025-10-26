@@ -43,7 +43,13 @@ export const jobSlide = createSlice({
         setActiveMenu: (state, action) => {
             // state.activeMenu = action.payload;
         },
-
+        resetJobPage: (state) => {
+            state.meta.page = 1;
+        },
+        setJobPage: (state, action) => {
+            state.meta.page = action.payload.page;
+            state.meta.pageSize = action.payload.pageSize;
+        },
 
     },
     extraReducers: (builder) => {
@@ -63,12 +69,10 @@ export const jobSlide = createSlice({
         builder.addCase(fetchJob.fulfilled, (state, action) => {
             if (action.payload && action.payload.data) {
                 state.isFetching = false;
-                state.meta = action.payload.data.meta;
+                state.meta.pages = action.payload.data.meta.pages;
+                state.meta.total = action.payload.data.meta.total;
                 state.result = action.payload.data.result;
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
     },
 
@@ -76,6 +80,8 @@ export const jobSlide = createSlice({
 
 export const {
     setActiveMenu,
+    resetJobPage,
+    setJobPage,
 } = jobSlide.actions;
 
 export default jobSlide.reducer;

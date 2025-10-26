@@ -43,7 +43,15 @@ export const companySlide = createSlice({
         setActiveMenu: (state, action) => {
             // state.activeMenu = action.payload;
         },
-
+        // ✅ FIX: Reset về page 1 khi vào trang Company
+        resetCompanyPage: (state) => {
+            state.meta.page = 1;
+        },
+        // ✅ FIX: Update page ngay lập tức khi user click pagination
+        setCompanyPage: (state, action) => {
+            state.meta.page = action.payload.page;
+            state.meta.pageSize = action.payload.pageSize;
+        },
 
     },
     extraReducers: (builder) => {
@@ -63,12 +71,12 @@ export const companySlide = createSlice({
         builder.addCase(fetchCompany.fulfilled, (state, action) => {
             if (action.payload && action.payload.data) {
                 state.isFetching = false;
-                state.meta = action.payload.data.meta;
+                // ✅ FIX: Chỉ update pages và total, KHÔNG overwrite page/pageSize
+                // Vì page/pageSize đã được set bởi setCompanyPage() trước đó
+                state.meta.pages = action.payload.data.meta.pages;
+                state.meta.total = action.payload.data.meta.total;
                 state.result = action.payload.data.result;
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
     },
 
@@ -76,6 +84,8 @@ export const companySlide = createSlice({
 
 export const {
     setActiveMenu,
+    resetCompanyPage,
+    setCompanyPage,
 } = companySlide.actions;
 
 export default companySlide.reducer;

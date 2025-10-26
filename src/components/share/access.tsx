@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Result } from "antd";
 import { useAppSelector } from '@/redux/hooks';
+import { hasAdminAccess } from '@/config/utils';
+
 interface IProps {
     hideChildren?: boolean;
     children: React.ReactNode;
@@ -8,30 +10,55 @@ interface IProps {
 }
 
 const Access = (props: IProps) => {
-    //set default: hideChildren = false => vẫn render children
-    // hideChildren = true => ko render children, ví dụ hide button (button này check quyền)
     const { permission, hideChildren = false } = props;
-    const [allow, setAllow] = useState<boolean>(true);
+    
+    // ✅ FIX: Default FALSE (deny by default - more secure)
+    const [allow, setAllow] = useState<boolean>(false);
 
     const permissions = useAppSelector(state => state.account.user.role.permissions);
+    const userRole = useAppSelector(state => state.account.user.role.name);
 
     useEffect(() => {
-        if (permissions?.length) {
-            const check = permissions.find(item =>
-                item.apiPath === permission.apiPath
-                && item.method === permission.method
-                && item.module === permission.module
-            )
-            if (check) {
-                setAllow(true)
-            } else
-                setAllow(false);
+        // ✅ FIX: Admin có full quyền, bypass permission check
+        if (hasAdminAccess(userRole)) {
+            setAllow(true);
+            return;
         }
-    }, [permissions])
+        
+        // ✅ FIX: Kiểm tra permissions array (dù empty hay không)
+        if (!permissions || permissions.length === 0) {
+            setAllow(false);
+            return;
+        }
+
+        // ✅ FIX: Flexible permission matching
+        const check = permissions.find(item => {
+            // Case-insensitive comparison
+            const methodMatch = item.method?.toUpperCase() === permission.method?.toUpperCase();
+            const moduleMatch = item.module?.toUpperCase() === permission.module?.toUpperCase();
+            
+            // Flexible API path matching để handle backend trả về khác format
+            // Backend có thể trả: /api/v1/companies/** hoặc /api/v1/companies/{id}
+            const normalizedItemPath = item.apiPath?.replace(/\/\*\*$/, '').replace(/\/\{[^}]+\}$/, '');
+            const normalizedPermPath = permission.apiPath?.replace(/\/\*\*$/, '').replace(/\/\{[^}]+\}$/, '');
+            
+            const apiPathMatch = 
+                item.apiPath === permission.apiPath  // Exact match
+                || normalizedItemPath === normalizedPermPath;  // Normalized match
+
+            return methodMatch && moduleMatch && apiPathMatch;
+        });
+
+        setAllow(!!check);
+        
+    }, [permissions, userRole, permission]);
+
+    // Check ACL setting (có thể tắt ACL trong development)
+    const aclDisabled = import.meta.env.VITE_ACL_ENABLE === 'false';
 
     return (
         <>
-            {allow === true || import.meta.env.VITE_ACL_ENABLE === 'false' ?
+            {(allow || aclDisabled) ?
                 <>{props.children}</>
                 :
                 <>
@@ -42,15 +69,12 @@ const Access = (props: IProps) => {
                             subTitle="Xin lỗi, bạn không có quyền hạn (permission) truy cập thông tin này"
                         />
                         :
-                        <>
-                            {/* render nothing */}
-                        </>
+                        null
                     }
                 </>
             }
         </>
-
-    )
-}
+    );
+};
 
 export default Access;

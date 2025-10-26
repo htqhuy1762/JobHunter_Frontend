@@ -39,7 +39,13 @@ export const permissionSlide = createSlice({
     initialState,
     // The `reducers` field lets us define reducers and generate associated actions
     reducers: {
-
+        resetPermissionPage: (state) => {
+            state.meta.page = 1;
+        },
+        setPermissionPage: (state, action) => {
+            state.meta.page = action.payload.page;
+            state.meta.pageSize = action.payload.pageSize;
+        },
 
     },
     extraReducers: (builder) => {
@@ -59,19 +65,18 @@ export const permissionSlide = createSlice({
         builder.addCase(fetchPermission.fulfilled, (state, action) => {
             if (action.payload && action.payload.data) {
                 state.isFetching = false;
-                state.meta = action.payload.data.meta;
+                state.meta.pages = action.payload.data.meta.pages;
+                state.meta.total = action.payload.data.meta.total;
                 state.result = action.payload.data.result;
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
     },
 
 });
 
 export const {
-
+    resetPermissionPage,
+    setPermissionPage,
 } = permissionSlide.actions;
 
 export default permissionSlide.reducer;

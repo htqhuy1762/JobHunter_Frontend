@@ -67,6 +67,13 @@ export const roleSlide = createSlice({
                 permissions: []
             }
         },
+        resetRolePage: (state) => {
+            state.meta.page = 1;
+        },
+        setRolePage: (state, action) => {
+            state.meta.page = action.payload.page;
+            state.meta.pageSize = action.payload.pageSize;
+        },
 
     },
     extraReducers: (builder) => {
@@ -86,12 +93,10 @@ export const roleSlide = createSlice({
         builder.addCase(fetchRole.fulfilled, (state, action) => {
             if (action.payload && action.payload.data) {
                 state.isFetching = false;
-                state.meta = action.payload.data.meta;
+                state.meta.pages = action.payload.data.meta.pages;
+                state.meta.total = action.payload.data.meta.total;
                 state.result = action.payload.data.result;
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
 
         builder.addCase(fetchRoleById.pending, (state, action) => {
@@ -131,7 +136,9 @@ export const roleSlide = createSlice({
 });
 
 export const {
-    resetSingleRole
+    resetSingleRole,
+    resetRolePage,
+    setRolePage,
 } = roleSlide.actions;
 
 export default roleSlide.reducer;

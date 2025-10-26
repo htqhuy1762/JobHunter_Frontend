@@ -1,7 +1,7 @@
 import ModalCompany from "@/components/admin/company/modal.company";
 import DataTable from "@/components/client/data-table";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchCompany } from "@/redux/slice/companySlide";
+import { fetchCompany, resetCompanyPage, setCompanyPage } from "@/redux/slice/companySlide";
 import { ICompany } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -26,6 +26,8 @@ const CompanyPage = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        // ✅ FIX: Reset về page 1 khi component mount
+        dispatch(resetCompanyPage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchCompany({ query }));
     }, []);
@@ -215,6 +217,8 @@ const CompanyPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                // ✅ FIX: Update page ngay lập tức, không đợi API response
+                                dispatch(setCompanyPage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchCompany({ query }));
                             },

@@ -1,6 +1,6 @@
 import DataTable from "@/components/client/data-table";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchUser } from "@/redux/slice/userSlide";
+import { fetchUser, resetUserPage, setUserPage } from "@/redux/slice/userSlide";
 import { IUser } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -28,6 +28,7 @@ const UserPage = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        dispatch(resetUserPage());
         const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
         dispatch(fetchUser({ query }));
     }, []);
@@ -229,6 +230,7 @@ const UserPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
+                                dispatch(setUserPage({ page, pageSize }));
                                 const query = buildQuery({ current: page, pageSize }, {}, {});
                                 dispatch(fetchUser({ query }));
                             },
