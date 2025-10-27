@@ -19,6 +19,8 @@ export const useResumes = (query: string) => {
             const res = await callFetchResume(query);
             return res.data;
         },
+        // ⚡ Resumes thay đổi thường xuyên → staleTime ngắn hơn (2 phút)
+        staleTime: 2 * 60 * 1000,
     });
 };
 

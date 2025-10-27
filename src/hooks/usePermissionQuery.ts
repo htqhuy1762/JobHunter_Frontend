@@ -20,6 +20,9 @@ export const usePermissions = (query: string) => {
             const res = await callFetchPermission(query);
             return res.data;
         },
+        // ⚡ Permissions ít thay đổi → staleTime dài hơn (15 phút)
+        staleTime: 15 * 60 * 1000,
+        gcTime: 30 * 60 * 1000, // 30 phút cache
     });
 };
 

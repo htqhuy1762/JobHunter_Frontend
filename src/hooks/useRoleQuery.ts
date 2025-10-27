@@ -20,6 +20,9 @@ export const useRoles = (query: string) => {
             const res = await callFetchRole(query);
             return res.data; // Return data directly
         },
+        // ⚡ Roles ít thay đổi → staleTime dài hơn (15 phút)
+        staleTime: 15 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 };
 
@@ -73,22 +76,43 @@ export const useUpdateRole = () => {
     });
 };
 
-// Delete role mutation
+// Delete role mutation với optimistic update
 export const useDeleteRole = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (id: string) => callDeleteRole(id),
+        onMutate: async (deletedId) => {
+            await queryClient.cancelQueries({ queryKey: roleKeys.lists() });
+            const previousData = queryClient.getQueriesData({ queryKey: roleKeys.lists() });
+
+            queryClient.setQueriesData({ queryKey: roleKeys.lists() }, (old: any) => {
+                if (!old?.result) return old;
+                return {
+                    ...old,
+                    result: old.result.filter((role: any) => role.id !== deletedId),
+                    meta: { ...old.meta, total: old.meta.total - 1 }
+                };
+            });
+
+            return { previousData };
+        },
         onSuccess: () => {
             message.success('Xóa Role thành công');
-            // Invalidate all role lists
-            queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
         },
-        onError: (error: any) => {
+        onError: (error: any, deletedId, context) => {
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
             notification.error({
                 message: 'Có lỗi xảy ra',
                 description: error?.message || 'Không thể xóa role',
             });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
         },
     });
 };

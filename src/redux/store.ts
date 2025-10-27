@@ -4,24 +4,15 @@ import {
   ThunkAction,
 } from '@reduxjs/toolkit';
 import accountReducer from './slice/accountSlide';
-import companyReducer from './slice/companySlide';
-import userReducer from './slice/userSlide';
-import jobReducer from './slice/jobSlide';
-import resumeReducer from './slice/resumeSlide';
-import permissionReducer from './slice/permissionSlide';
-import roleReducer from './slice/roleSlide';
-import skillReducer from './slice/skillSlide';
+
+// ⚡ TanStack Query đã thay thế Redux cho server data
+// Chỉ giữ accountReducer cho authentication state
 
 export const store = configureStore({
   reducer: {
     account: accountReducer,
-    company: companyReducer,
-    user: userReducer,
-    job: jobReducer,
-    resume: resumeReducer,
-    permission: permissionReducer,
-    role: roleReducer,
-    skill: skillReducer,
+    // ❌ Removed: company, user, job, resume, permission, role, skill
+    // ✅ Những state này giờ được manage bởi TanStack Query
   },
 });
 

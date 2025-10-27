@@ -70,22 +70,51 @@ export const useUpdateUser = () => {
 };
 
 /**
- * Hook để delete user
+ * Hook để delete user với optimistic update
  */
 export const useDeleteUser = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (id: string) => callDeleteUser(id),
+        // ⚡ Optimistic update: Xóa ngay trong UI trước khi API response
+        onMutate: async (deletedId) => {
+            // Cancel ongoing queries
+            await queryClient.cancelQueries({ queryKey: userKeys.lists() });
+
+            // Snapshot previous value
+            const previousData = queryClient.getQueriesData({ queryKey: userKeys.lists() });
+
+            // Optimistically update cache
+            queryClient.setQueriesData({ queryKey: userKeys.lists() }, (old: any) => {
+                if (!old?.result) return old;
+                return {
+                    ...old,
+                    result: old.result.filter((user: any) => user.id !== deletedId),
+                    meta: { ...old.meta, total: old.meta.total - 1 }
+                };
+            });
+
+            return { previousData };
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: userKeys.lists() });
             message.success('Xóa User thành công');
         },
-        onError: (error: any) => {
+        onError: (error: any, deletedId, context) => {
+            // Rollback on error
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
             notification.error({
                 message: 'Có lỗi xảy ra',
                 description: error?.message || 'Không thể xóa user'
             });
+        },
+        onSettled: () => {
+            // Refetch để đảm bảo sync với server
+            queryClient.invalidateQueries({ queryKey: userKeys.lists() });
         }
     });
 };

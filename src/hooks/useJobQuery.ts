@@ -20,6 +20,8 @@ export const useJobs = (query: string) => {
             const res = await callFetchJob(query);
             return res.data;
         },
+        // ⚡ Jobs thay đổi thường xuyên → staleTime ngắn hơn (3 phút)
+        staleTime: 3 * 60 * 1000,
     });
 };
 
