@@ -1,0 +1,80 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { callCreateSkill, callDeleteSkill, callUpdateSkill } from '@/config/api';
+import { message, notification } from 'antd';
+import axios from '@/config/axios-customize';
+
+// Query keys factory
+export const skillKeys = {
+    all: ['skills'] as const,
+    lists: () => [...skillKeys.all, 'list'] as const,
+    list: (query: string) => [...skillKeys.lists(), query] as const,
+};
+
+// Fetch skills with pagination
+export const useSkills = (query: string) => {
+    return useQuery({
+        queryKey: skillKeys.list(query),
+        queryFn: async () => {
+            const res = await axios.get(`/api/v1/skills?${query}`);
+            return res.data;
+        },
+    });
+};
+
+// Create skill mutation
+export const useCreateSkill = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (name: string) => callCreateSkill(name),
+        onSuccess: () => {
+            message.success('Tạo mới Skill thành công');
+            queryClient.invalidateQueries({ queryKey: skillKeys.lists() });
+        },
+        onError: (error: any) => {
+            notification.error({
+                message: 'Có lỗi xảy ra',
+                description: error?.message || 'Không thể tạo skill',
+            });
+        },
+    });
+};
+
+// Update skill mutation
+export const useUpdateSkill = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, name }: { id: string; name: string }) =>
+            callUpdateSkill(id, name),
+        onSuccess: () => {
+            message.success('Cập nhật Skill thành công');
+            queryClient.invalidateQueries({ queryKey: skillKeys.all });
+        },
+        onError: (error: any) => {
+            notification.error({
+                message: 'Có lỗi xảy ra',
+                description: error?.message || 'Không thể cập nhật skill',
+            });
+        },
+    });
+};
+
+// Delete skill mutation
+export const useDeleteSkill = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => callDeleteSkill(id),
+        onSuccess: () => {
+            message.success('Xóa Skill thành công');
+            queryClient.invalidateQueries({ queryKey: skillKeys.lists() });
+        },
+        onError: (error: any) => {
+            notification.error({
+                message: 'Có lỗi xảy ra',
+                description: error?.message || 'Không thể xóa skill',
+            });
+        },
+    });
+};

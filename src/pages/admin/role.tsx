@@ -1,30 +1,71 @@
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IPermission, IRole } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Popconfirm, Space, Tag, message, notification } from "antd";
+import { Button, Popconfirm, Space, Tag } from "antd";
 import { useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { callDeleteRole, callFetchPermission } from "@/config/api";
+import { callFetchPermission } from "@/config/api";
 import queryString from 'query-string';
-import { fetchRole, resetRolePage, setRolePage } from "@/redux/slice/roleSlide";
 import ModalRole from "@/components/admin/role/modal.role";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
 import { sfLike } from "spring-filter-query-builder";
 import { groupByPermission } from "@/config/utils";
+import { useRoles, useDeleteRole } from "@/hooks/useRoleQuery";
+
+// Helper function để build query string - di chuyển ra ngoài component
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const clone = { ...params };
+    const q: any = {
+        page: params.current,
+        size: params.pageSize,
+        filter: ""
+    }
+
+    if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
+
+    if (!q.filter) delete q.filter;
+
+    let temp = queryString.stringify(q);
+
+    let sortBy = "";
+    if (sort && sort.name) {
+        sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
+    }
+    if (sort && sort.createdAt) {
+        sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
+    }
+    if (sort && sort.updatedAt) {
+        sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    return temp;
+}
 
 const RolePage = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
 
     const tableRef = useRef<ActionType>();
 
-    const isFetching = useAppSelector(state => state.role.isFetching);
-    const meta = useAppSelector(state => state.role.meta);
-    const roles = useAppSelector(state => state.role.result);
-    const dispatch = useAppDispatch();
+    // TanStack Query - thay thế Redux
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = useRoles(query);
+    const deleteRoleMutation = useDeleteRole();
 
+    // Extract data từ response
+    const roles = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     //all backend permissions
     const [listPermissions, setListPermissions] = useState<{
@@ -43,31 +84,17 @@ const RolePage = () => {
             }
         }
         init();
-
-        // Fetch roles data
-        dispatch(resetRolePage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchRole({ query }));
     }, [])
 
 
     const handleDeleteRole = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeleteRole(id);
-            if (res && res.statusCode === 200) {
-                message.success('Xóa Role thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
+            await deleteRoleMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch(); // TanStack Query refetch
     }
 
     const columns: ProColumns<IRole>[] = [
@@ -176,41 +203,6 @@ const RolePage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-        const clone = { ...params };
-        const q: any = {
-            page: params.current,
-            size: params.pageSize,
-            filter: ""
-        }
-
-        if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
-
-        if (!q.filter) delete q.filter;
-
-        let temp = queryString.stringify(q);
-
-        let sortBy = "";
-        if (sort && sort.name) {
-            sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
-        }
-        if (sort && sort.createdAt) {
-            sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
-        }
-        if (sort && sort.updatedAt) {
-            sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -220,7 +212,7 @@ const RolePage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Roles (Vai Trò)"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={roles}
                     manualRequest={true}
@@ -232,9 +224,7 @@ const RolePage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                dispatch(setRolePage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchRole({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }

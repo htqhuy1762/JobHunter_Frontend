@@ -1,55 +1,88 @@
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchUser, resetUserPage, setUserPage } from "@/redux/slice/userSlide";
 import { IUser } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef, useEffect } from 'react';
+import { Button, Popconfirm, Space } from "antd";
+import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
-import { callDeleteUser } from "@/config/api";
 import queryString from 'query-string';
 import ModalUser from "@/components/admin/user/modal.user";
 import ViewDetailUser from "@/components/admin/user/view.user";
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import { sfLike } from "spring-filter-query-builder";
+import { useUsers, useDeleteUser } from "@/hooks/useUserQuery";
+
+// Helper function để build query string - di chuyển ra ngoài component!
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const q: any = {
+        page: params.current,
+        size: params.pageSize,
+        filter: ""
+    }
+
+    const clone = { ...params };
+    if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
+    if (clone.email) {
+        q.filter = clone.name ?
+            q.filter + " and " + `${sfLike("email", clone.email)}`
+            : `${sfLike("email", clone.email)}`;
+    }
+
+    if (!q.filter) delete q.filter;
+    let temp = queryString.stringify(q);
+
+    let sortBy = "";
+    if (sort && sort.name) {
+        sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
+    }
+    if (sort && sort.email) {
+        sortBy = sort.email === 'ascend' ? "sort=email,asc" : "sort=email,desc";
+    }
+    if (sort && sort.createdAt) {
+        sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
+    }
+    if (sort && sort.updatedAt) {
+        sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    return temp;
+}
 
 const UserPage = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const [dataInit, setDataInit] = useState<IUser | null>(null);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
 
     const tableRef = useRef<ActionType>();
 
-    const isFetching = useAppSelector(state => state.user.isFetching);
-    const meta = useAppSelector(state => state.user.meta);
-    const users = useAppSelector(state => state.user.result);
-    const dispatch = useAppDispatch();
+    // TanStack Query - thay thế Redux!
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = useUsers(query);
+    const deleteUserMutation = useDeleteUser();
 
-    useEffect(() => {
-        dispatch(resetUserPage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchUser({ query }));
-    }, []);
+    // Extract data từ response
+    const users = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     const handleDeleteUser = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeleteUser(id);
-            if (+res.statusCode === 200) {
-                message.success('Xóa User thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
+            await deleteUserMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch(); // TanStack Query refetch - đơn giản hơn nhiều!
     }
 
     const columns: ProColumns<IUser>[] = [
@@ -167,48 +200,6 @@ const UserPage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-        const q: any = {
-            page: params.current,
-            size: params.pageSize,
-            filter: ""
-        }
-
-        const clone = { ...params };
-        if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
-        if (clone.email) {
-            q.filter = clone.name ?
-                q.filter + " and " + `${sfLike("email", clone.email)}`
-                : `${sfLike("email", clone.email)}`;
-        }
-
-        if (!q.filter) delete q.filter;
-        let temp = queryString.stringify(q);
-
-        let sortBy = "";
-        if (sort && sort.name) {
-            sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
-        }
-        if (sort && sort.email) {
-            sortBy = sort.email === 'ascend' ? "sort=email,asc" : "sort=email,desc";
-        }
-        if (sort && sort.createdAt) {
-            sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
-        }
-        if (sort && sort.updatedAt) {
-            sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -218,7 +209,7 @@ const UserPage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Users"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={users}
                     manualRequest={true}
@@ -230,9 +221,7 @@ const UserPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                dispatch(setUserPage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchUser({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }

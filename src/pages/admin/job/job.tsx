@@ -1,51 +1,94 @@
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IJob } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns, ProFormSelect } from '@ant-design/pro-components';
-import { Button, Popconfirm, Space, Tag, message, notification } from "antd";
-import { useRef, useEffect } from 'react';
+import { Button, Popconfirm, Space, Tag } from "antd";
+import { useRef, useState } from 'react';
 import dayjs from 'dayjs';
-import { callDeleteJob } from "@/config/api";
 import queryString from 'query-string';
 import { useNavigate } from "react-router-dom";
-import { fetchJob, resetJobPage, setJobPage } from "@/redux/slice/jobSlide";
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import { sfIn } from "spring-filter-query-builder";
+import { useJobs, useDeleteJob } from "@/hooks/useJobQuery";
+
+// Helper function
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const clone = { ...params };
+    let parts = [];
+    if (clone.name) parts.push(`name ~ '${clone.name}'`);
+    if (clone.salary) parts.push(`salary ~ '${clone.salary}'`);
+    if (clone?.level?.length) {
+        parts.push(`${sfIn("level", clone.level).toString()}`);
+    }
+
+    clone.filter = parts.join(' and ');
+    if (!clone.filter) delete clone.filter;
+
+    clone.page = clone.current;
+    clone.size = clone.pageSize;
+
+    delete clone.current;
+    delete clone.pageSize;
+    delete clone.name;
+    delete clone.salary;
+    delete clone.level;
+
+    let temp = queryString.stringify(clone);
+
+    let sortBy = "";
+    if (sort && sort.name) {
+        sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
+    }
+    if (sort && sort.salary) {
+        sortBy = sort.salary === 'ascend' ? "sort=salary,asc" : "sort=salary,desc";
+    }
+    if (sort && sort.level) {
+        sortBy = sort.level === 'ascend' ? "sort=level,asc" : "sort=level,desc";
+    }
+    if (sort && sort.createdAt) {
+        sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
+    }
+    if (sort && sort.updatedAt) {
+        sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    temp += "&populate=companyId&fields=companyId.id, companyId.name, companyId.logo";
+    return temp;
+}
 
 const JobPage = () => {
-    const tableRef = useRef<ActionType>();
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
 
-    const isFetching = useAppSelector(state => state.job.isFetching);
-    const meta = useAppSelector(state => state.job.meta);
-    const jobs = useAppSelector(state => state.job.result);
-    const dispatch = useAppDispatch();
+    const tableRef = useRef<ActionType>();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        dispatch(resetJobPage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchJob({ query }));
-    }, []);
+    // TanStack Query
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = useJobs(query);
+    const deleteJobMutation = useDeleteJob();
+
+    // Extract data
+    const jobs = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     const handleDeleteJob = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeleteJob(id);
-            if (res && res.data) {
-                message.success('Xóa Job thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
+            await deleteJobMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch();
     }
 
     const columns: ProColumns<IJob>[] = [
@@ -188,51 +231,6 @@ const JobPage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-
-        const clone = { ...params };
-        let parts = [];
-        if (clone.name) parts.push(`name ~ '${clone.name}'`);
-        if (clone.salary) parts.push(`salary ~ '${clone.salary}'`);
-        if (clone?.level?.length) {
-            parts.push(`${sfIn("level", clone.level).toString()}`);
-        }
-
-        clone.filter = parts.join(' and ');
-        if (!clone.filter) delete clone.filter;
-
-        clone.page = clone.current;
-        clone.size = clone.pageSize;
-
-        delete clone.current;
-        delete clone.pageSize;
-        delete clone.name;
-        delete clone.salary;
-        delete clone.level;
-
-        let temp = queryString.stringify(clone);
-
-        let sortBy = "";
-        const fields = ["name", "salary", "createdAt", "updatedAt"];
-        if (sort) {
-            for (const field of fields) {
-                if (sort[field]) {
-                    sortBy = `sort=${field},${sort[field] === 'ascend' ? 'asc' : 'desc'}`;
-                    break;  // Remove this if you want to handle multiple sort parameters
-                }
-            }
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -242,7 +240,7 @@ const JobPage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Jobs"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={jobs}
                     manualRequest={true}
@@ -254,9 +252,7 @@ const JobPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                dispatch(setJobPage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchJob({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }

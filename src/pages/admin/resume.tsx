@@ -1,53 +1,82 @@
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IResume } from "@/types/backend";
 import { ActionType, ProColumns, ProFormSelect } from '@ant-design/pro-components';
-import { Space, message, notification } from "antd";
-import { useState, useRef, useEffect } from 'react';
+import { Space } from "antd";
+import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
-import { callDeleteResume } from "@/config/api";
 import queryString from 'query-string';
-import { fetchResume, resetResumePage, setResumePage } from "@/redux/slice/resumeSlide";
 import ViewDetailResume from "@/components/admin/resume/view.resume";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
 import { sfIn } from "spring-filter-query-builder";
 import { EditOutlined } from "@ant-design/icons";
+import { useResumes, useDeleteResume } from "@/hooks/useResumeQuery";
+
+// Helper function
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const clone = { ...params };
+
+    if (clone?.status?.length) {
+        clone.filter = sfIn("status", clone.status).toString();
+        delete clone.status;
+    }
+
+    clone.page = clone.current;
+    clone.size = clone.pageSize;
+
+    delete clone.current;
+    delete clone.pageSize;
+
+    let temp = queryString.stringify(clone);
+
+    let sortBy = "";
+    if (sort && sort.status) {
+        sortBy = sort.status === 'ascend' ? "sort=status,asc" : "sort=status,desc";
+    }
+
+    if (sort && sort.createdAt) {
+        sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
+    }
+    if (sort && sort.updatedAt) {
+        sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    return temp;
+}
 
 const ResumePage = () => {
-    const tableRef = useRef<ActionType>();
-
-    const isFetching = useAppSelector(state => state.resume.isFetching);
-    const meta = useAppSelector(state => state.resume.meta);
-    const resumes = useAppSelector(state => state.resume.result);
-    const dispatch = useAppDispatch();
-
-    useEffect(() => {
-        dispatch(resetResumePage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchResume({ query }));
-    }, []);
-
     const [dataInit, setDataInit] = useState<IResume | null>(null);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
+
+    const tableRef = useRef<ActionType>();
+
+    // TanStack Query
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = useResumes(query);
+    const deleteResumeMutation = useDeleteResume();
+
+    // Extract data
+    const resumes = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     const handleDeleteResume = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeleteResume(id);
-            if (res && res.data) {
-                message.success('Xóa Resume thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
+            await deleteResumeMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch();
     }
 
     const columns: ProColumns<IResume>[] = [
@@ -164,45 +193,6 @@ const ResumePage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-        const clone = { ...params };
-
-        if (clone?.status?.length) {
-            clone.filter = sfIn("status", clone.status).toString();
-            delete clone.status;
-        }
-
-        clone.page = clone.current;
-        clone.size = clone.pageSize;
-
-        delete clone.current;
-        delete clone.pageSize;
-
-        let temp = queryString.stringify(clone);
-
-        let sortBy = "";
-        if (sort && sort.status) {
-            sortBy = sort.status === 'ascend' ? "sort=status,asc" : "sort=status,desc";
-        }
-
-        if (sort && sort.createdAt) {
-            sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
-        }
-        if (sort && sort.updatedAt) {
-            sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        // temp += "&populate=companyId,jobId&fields=companyId.id, companyId.name, companyId.logo, jobId.id, jobId.name";
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -212,7 +202,7 @@ const ResumePage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Resumes"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={resumes}
                     manualRequest={true}
@@ -224,9 +214,7 @@ const ResumePage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                dispatch(setResumePage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchResume({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }

@@ -1,55 +1,92 @@
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IPermission } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef, useEffect } from 'react';
+import { Button, Popconfirm, Space } from "antd";
+import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
-import { callDeletePermission } from "@/config/api";
 import queryString from 'query-string';
-import { fetchPermission, resetPermissionPage, setPermissionPage } from "@/redux/slice/permissionSlide";
 import ViewDetailPermission from "@/components/admin/permission/view.permission";
 import ModalPermission from "@/components/admin/permission/modal.permission";
 import { colorMethod } from "@/config/utils";
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
+import { usePermissions, useDeletePermission } from "@/hooks/usePermissionQuery";
+
+// Helper function
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const clone = { ...params };
+
+    let parts = [];
+    if (clone.name) parts.push(`name ~ '${clone.name}'`);
+    if (clone.apiPath) parts.push(`apiPath ~ '${clone.apiPath}'`);
+    if (clone.method) parts.push(`method ~ '${clone.method}'`);
+    if (clone.module) parts.push(`module ~ '${clone.module}'`);
+
+    clone.filter = parts.join(' and ');
+    if (!clone.filter) delete clone.filter;
+
+    clone.page = clone.current;
+    clone.size = clone.pageSize;
+
+    delete clone.current;
+    delete clone.pageSize;
+    delete clone.name;
+    delete clone.apiPath;
+    delete clone.method;
+    delete clone.module;
+
+    let temp = queryString.stringify(clone);
+
+    let sortBy = "";
+    const fields = ["name", "apiPath", "method", "module", "createdAt", "updatedAt"];
+
+    if (sort) {
+        for (const field of fields) {
+            if (sort[field]) {
+                sortBy = `sort=${field},${sort[field] === 'ascend' ? 'asc' : 'desc'}`;
+                break;
+            }
+        }
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    return temp;
+}
 
 const PermissionPage = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const [dataInit, setDataInit] = useState<IPermission | null>(null);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
 
     const tableRef = useRef<ActionType>();
 
-    const isFetching = useAppSelector(state => state.permission.isFetching);
-    const meta = useAppSelector(state => state.permission.meta);
-    const permissions = useAppSelector(state => state.permission.result);
-    const dispatch = useAppDispatch();
+    // TanStack Query
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = usePermissions(query);
+    const deletePermissionMutation = useDeletePermission();
 
-    useEffect(() => {
-        dispatch(resetPermissionPage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchPermission({ query }));
-    }, []);
+    // Extract data
+    const permissions = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     const handleDeletePermission = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeletePermission(id);
-            if (res && res.statusCode === 200) {
-                message.success('Xóa Permission thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.error
-                });
-            }
+            await deletePermissionMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch();
     }
 
     const columns: ProColumns<IPermission>[] = [
@@ -169,52 +206,6 @@ const PermissionPage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-        const clone = { ...params };
-
-        let parts = [];
-        if (clone.name) parts.push(`name ~ '${clone.name}'`);
-        if (clone.apiPath) parts.push(`apiPath ~ '${clone.apiPath}'`);
-        if (clone.method) parts.push(`method ~ '${clone.method}'`);
-        if (clone.module) parts.push(`module ~ '${clone.module}'`);
-
-        clone.filter = parts.join(' and ');
-        if (!clone.filter) delete clone.filter;
-
-        clone.page = clone.current;
-        clone.size = clone.pageSize;
-
-        delete clone.current;
-        delete clone.pageSize;
-        delete clone.name;
-        delete clone.apiPath;
-        delete clone.method;
-        delete clone.module;
-
-        let temp = queryString.stringify(clone);
-
-        let sortBy = "";
-        const fields = ["name", "apiPath", "method", "module", "createdAt", "updatedAt"];
-
-        if (sort) {
-            for (const field of fields) {
-                if (sort[field]) {
-                    sortBy = `sort=${field},${sort[field] === 'ascend' ? 'asc' : 'desc'}`;
-                    break;  // Remove this if you want to handle multiple sort parameters
-                }
-            }
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -224,7 +215,7 @@ const PermissionPage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Permissions (Quyền Hạn)"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={permissions}
                     manualRequest={true}
@@ -236,9 +227,7 @@ const PermissionPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                dispatch(setPermissionPage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchPermission({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }

@@ -1,54 +1,87 @@
 import ModalCompany from "@/components/admin/company/modal.company";
 import DataTable from "@/components/client/data-table";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchCompany, resetCompanyPage, setCompanyPage } from "@/redux/slice/companySlide";
 import { ICompany } from "@/types/backend";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Popconfirm, Space, message, notification } from "antd";
-import { useState, useRef, useEffect } from 'react';
+import { Button, Popconfirm, Space } from "antd";
+import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
-import { callDeleteCompany } from "@/config/api";
 import queryString from 'query-string';
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import { sfLike } from "spring-filter-query-builder";
+import { useCompanies, useDeleteCompany } from "@/hooks/useCompanyQuery";
+
+// Helper function
+const buildQuery = (params: any, sort: any, filter: any) => {
+    const clone = { ...params };
+    const q: any = {
+        page: params.current,
+        size: params.pageSize,
+        filter: ""
+    }
+
+    if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
+    if (clone.address) {
+        q.filter = clone.name ?
+            q.filter + " and " + `${sfLike("address", clone.address)}`
+            : `${sfLike("address", clone.address)}`;
+    }
+
+    if (!q.filter) delete q.filter;
+
+    let temp = queryString.stringify(q);
+
+    let sortBy = "";
+    if (sort && sort.name) {
+        sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
+    }
+    if (sort && sort.address) {
+        sortBy = sort.address === 'ascend' ? "sort=address,asc" : "sort=address,desc";
+    }
+    if (sort && sort.createdAt) {
+        sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
+    }
+    if (sort && sort.updatedAt) {
+        sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
+    }
+
+    //mặc định sort theo updatedAt
+    if (Object.keys(sortBy).length === 0) {
+        temp = `${temp}&sort=updatedAt,desc`;
+    } else {
+        temp = `${temp}&${sortBy}`;
+    }
+
+    return temp;
+}
 
 const CompanyPage = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const [dataInit, setDataInit] = useState<ICompany | null>(null);
+    const [queryParams, setQueryParams] = useState({ current: 1, pageSize: 10 });
+    const [sortParams, setSortParams] = useState({});
+    const [filterParams, setFilterParams] = useState({});
 
     const tableRef = useRef<ActionType>();
 
-    const isFetching = useAppSelector(state => state.company.isFetching);
-    const meta = useAppSelector(state => state.company.meta);
-    const companies = useAppSelector(state => state.company.result);
-    const dispatch = useAppDispatch();
+    // TanStack Query
+    const query = buildQuery(queryParams, sortParams, filterParams);
+    const { data, isLoading, refetch } = useCompanies(query);
+    const deleteCompanyMutation = useDeleteCompany();
 
-    useEffect(() => {
-        // ✅ FIX: Reset về page 1 khi component mount
-        dispatch(resetCompanyPage());
-        const query = buildQuery({ current: 1, pageSize: 10 }, {}, {});
-        dispatch(fetchCompany({ query }));
-    }, []);
+    // Extract data
+    const companies = data?.result || [];
+    const meta = data?.meta || { page: 1, pageSize: 10, total: 0 };
 
     const handleDeleteCompany = async (id: string | undefined) => {
         if (id) {
-            const res = await callDeleteCompany(id);
-            if (res && +res.statusCode === 200) {
-                message.success('Xóa Company thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
+            await deleteCompanyMutation.mutateAsync(id);
         }
     }
 
     const reloadTable = () => {
-        tableRef?.current?.reload();
+        refetch();
     }
 
     const columns: ProColumns<ICompany>[] = [
@@ -151,51 +184,6 @@ const CompanyPage = () => {
         },
     ];
 
-    const buildQuery = (params: any, sort: any, filter: any) => {
-        const clone = { ...params };
-        const q: any = {
-            page: params.current,
-            size: params.pageSize,
-            filter: ""
-        }
-
-
-
-        if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
-        if (clone.address) {
-            q.filter = clone.name ?
-                q.filter + " and " + `${sfLike("address", clone.address)}`
-                : `${sfLike("address", clone.address)}`;
-        }
-
-        if (!q.filter) delete q.filter;
-
-        let temp = queryString.stringify(q);
-
-        let sortBy = "";
-        if (sort && sort.name) {
-            sortBy = sort.name === 'ascend' ? "sort=name,asc" : "sort=name,desc";
-        }
-        if (sort && sort.address) {
-            sortBy = sort.address === 'ascend' ? "sort=address,asc" : "sort=address,desc";
-        }
-        if (sort && sort.createdAt) {
-            sortBy = sort.createdAt === 'ascend' ? "sort=createdAt,asc" : "sort=createdAt,desc";
-        }
-        if (sort && sort.updatedAt) {
-            sortBy = sort.updatedAt === 'ascend' ? "sort=updatedAt,asc" : "sort=updatedAt,desc";
-        }
-
-        //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
-            temp = `${temp}&sort=updatedAt,desc`;
-        } else {
-            temp = `${temp}&${sortBy}`;
-        }
-
-        return temp;
-    }
-
     return (
         <div>
             <Access
@@ -205,7 +193,7 @@ const CompanyPage = () => {
                     actionRef={tableRef}
                     headerTitle="Danh sách Công Ty"
                     rowKey="id"
-                    loading={isFetching}
+                    loading={isLoading}
                     columns={columns}
                     dataSource={companies}
                     manualRequest={true}
@@ -217,10 +205,7 @@ const CompanyPage = () => {
                             showSizeChanger: true,
                             total: meta.total,
                             onChange: (page, pageSize) => {
-                                // ✅ FIX: Update page ngay lập tức, không đợi API response
-                                dispatch(setCompanyPage({ page, pageSize }));
-                                const query = buildQuery({ current: page, pageSize }, {}, {});
-                                dispatch(fetchCompany({ query }));
+                                setQueryParams({ current: page, pageSize });
                             },
                             showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
                         }
