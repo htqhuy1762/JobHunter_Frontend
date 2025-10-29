@@ -12,7 +12,7 @@ import LoginPage from 'pages/auth/login';
 import RegisterPage from 'pages/auth/register';
 import ChangePasswordPage from 'pages/auth/change-password';
 import LayoutAdmin from 'components/admin/layout.admin';
-import ProtectedRoute from 'components/share/protected-route.ts';
+import ProtectedRoute, { AuthenticatedRoute } from 'components/share/protected-route.ts';
 import Header from 'components/client/header.client';
 import Footer from 'components/client/footer.client';
 import HomePage from 'pages/home';
@@ -166,9 +166,9 @@ export default function App() {
     {
       path: "/change-password",
       element:
-        <ProtectedRoute>
+        <AuthenticatedRoute>
           <ChangePasswordPage />
-        </ProtectedRoute>,
+        </AuthenticatedRoute>,
     },
   ]);
 
