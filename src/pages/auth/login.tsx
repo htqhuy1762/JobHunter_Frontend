@@ -31,16 +31,18 @@ const LoginPage = () => {
         const res = await callLogin(username, password);
         setIsSubmit(false);
 
-        if (res?.data) {
+        // Success: statusCode 200-299 và có data
+        if (res && res.data && res.data.access_token) {
             localStorage.setItem('access_token', res.data.access_token);
             dispatch(setUserLoginInfo(res.data.user))
             message.success('Đăng nhập tài khoản thành công!');
             window.location.href = callback ? callback : '/';
         } else {
+            // Error: Hiển thị message từ backend
             notification.error({
-                message: "Có lỗi xảy ra",
+                message: "Đăng nhập thất bại",
                 description:
-                    res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+                    res?.message && Array.isArray(res.message) ? res.message[0] : res?.message || "Vui lòng kiểm tra lại thông tin đăng nhập",
                 duration: 5
             })
         }

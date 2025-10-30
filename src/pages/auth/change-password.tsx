@@ -16,7 +16,7 @@ const ChangePasswordPage = () => {
         const res = await callChangePassword(oldPassword, newPassword, confirmPassword);
         setIsSubmit(false);
 
-        if (res?.data) {
+        if (res && res.statusCode === 200) {
             message.success('Đổi mật khẩu thành công!');
             form.resetFields();
             // Có thể redirect về trang profile hoặc dashboard
@@ -54,7 +54,7 @@ const ChangePasswordPage = () => {
                                     { required: true, message: 'Vui lòng nhập mật khẩu cũ!' }
                                 ]}
                             >
-                                <Input.Password 
+                                <Input.Password
                                     prefix={<LockOutlined />}
                                     placeholder="Nhập mật khẩu cũ"
                                 />
@@ -68,7 +68,7 @@ const ChangePasswordPage = () => {
                                     { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
                                 ]}
                             >
-                                <Input.Password 
+                                <Input.Password
                                     prefix={<LockOutlined />}
                                     placeholder="Nhập mật khẩu mới"
                                 />
@@ -90,16 +90,16 @@ const ChangePasswordPage = () => {
                                     }),
                                 ]}
                             >
-                                <Input.Password 
+                                <Input.Password
                                     prefix={<LockOutlined />}
                                     placeholder="Xác nhận mật khẩu mới"
                                 />
                             </Form.Item>
 
                             <Form.Item>
-                                <Button 
-                                    type="primary" 
-                                    htmlType="submit" 
+                                <Button
+                                    type="primary"
+                                    htmlType="submit"
                                     loading={isSubmit}
                                     style={{ width: '100%' }}
                                 >
@@ -108,10 +108,10 @@ const ChangePasswordPage = () => {
                             </Form.Item>
 
                             <Divider />
-                            
+
                             <div style={{ textAlign: 'center' }}>
-                                <Button 
-                                    type="link" 
+                                <Button
+                                    type="link"
                                     onClick={() => navigate('/')}
                                 >
                                     Quay lại trang chủ
