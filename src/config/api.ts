@@ -234,7 +234,7 @@ export const callCreateSubscriber = (subs: ISubscribers) => {
 }
 
 export const callGetSubscriberSkills = () => {
-    return axios.get<IBackendRes<ISubscribers>>('/api/v1/subscribers/skills')
+    return axios.get<IBackendRes<ISubscribers>>('/api/v1/skills')
 }
 
 export const callUpdateSubscriber = (subs: ISubscribers) => {
